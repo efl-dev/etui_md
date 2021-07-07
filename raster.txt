@@ -1,0 +1,16 @@
+[16:35:46] <raster> +------------------+
+[16:35:46] <raster> +RRRRRRRRRRRRRRRRRR|
+[16:35:46] <raster> +-+------+-------+-+
+[16:35:46] <raster> |R|      |       |R|
+[16:35:46] <raster> |R|  A   |   B   |R|
+[16:35:47] <raster> |R|      |       |R|
+[16:35:51] <raster> |R+------+-------+R|
+[16:35:53] <raster> |R|RRRRRRRRRRRRRR|R|
+[16:35:55] <raster> |R+------+-------+R|
+[16:35:57] <raster> |R|      |       |R|
+[16:35:59] <raster> |R|  C   |   D   |R|
+[16:36:01] <raster> |R|      |       |R|
+[16:36:03] <raster> +-+------+-------+-+
+[16:36:05] <raster> +RRRRRRRRRRRRRRRRRR|
+[16:36:07] <raster> +------------------+
+[16:36:09] <raster> hmm forgot the middle rect
