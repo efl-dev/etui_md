@@ -39,7 +39,6 @@ elm_main(int argc, char **argv)
     /* background */
     o = elm_bg_add(win);
     evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-    elm_object_style_set(o, "grad_vert_focus_title_match");
     elm_win_resize_object_add(win, o);
     evas_object_show(o);
 
@@ -55,8 +54,8 @@ elm_main(int argc, char **argv)
     scroller = o;
 
     o = etui_md_add(win);
-    evas_object_move(o, 0, 0);
-    evas_object_resize(o, 1, 1);
+    evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, 0.0);
     elm_object_content_set(scroller, o);
     evas_object_show(o);
 
