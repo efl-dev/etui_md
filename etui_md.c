@@ -21,6 +21,7 @@ typedef struct Md_ Md;
 
 struct Md_
 {
+    Evas_Object_Smart_Clipped_Data __clipped_data;
     Evas_Object *tb;
     Evas_Textblock_Cursor *cur;
     Md_Cursors *curs_current;
@@ -30,63 +31,6 @@ struct Md_
 static Evas_Smart *_smart = NULL;
 static Evas_Smart_Class _parent_sc = EVAS_SMART_CLASS_INIT_NULL;
 
-static void
-_etui_md_tb_resize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
-{
-    Evas_Object *o;
-    Md *sd;
-    Md_Cursors *cursors;
-    Eina_List *l;
-    int w, h;
-
-    o = (Evas_Object *)data;
-    sd = evas_object_smart_data_get(o);
-    EINA_SAFETY_ON_NULL_RETURN(sd);
-
-    evas_object_textblock_size_formatted_get(sd->tb, &w, &h);
-    printf("resized formatted : %d %d\n", w, h);
-    evas_object_size_hint_min_set(sd->tb, w, h);
-    evas_object_size_hint_min_set(o, w, h);
-
-#if 0
-    {
-        int xb, yb, wb, hb;
-        int xe, ye, we, he;
-        evas_textblock_cursor_geometry_get(sd->cur_code_begin,
-                                           &xb, &yb, &wb, &hb,
-                                           NULL, EVAS_TEXTBLOCK_CURSOR_BEFORE);
-        evas_textblock_cursor_geometry_get(sd->cur_code_end,
-                                           &xe, &ye, &we, &he,
-                                           NULL, EVAS_TEXTBLOCK_CURSOR_BEFORE);
-        printf(" ** beg : %d %d %d %d\n", xb, yb, wb, hb);
-        printf(" ** end : %d %d %d %d\n", xe, ye, we, he);
-        printf(" ** hau : %d\n", ye - yb);
-        evas_textblock_cursor_line_geometry_get(sd->cur_code_begin, &xb, &yb, &wb, &hb);
-        evas_textblock_cursor_line_geometry_get(sd->cur_code_end, &xe, &ye, &we, &he);
-        printf(" ** beg : %d %d %d %d\n", xb, yb, wb, hb);
-        printf(" ** end : %d %d %d %d\n", xe, ye, we, he);
-        printf(" ** hau : %d\n", ye - yb);
-    }
-#endif
-
-    EINA_LIST_FOREACH(sd->cursors, l, cursors)
-    {
-        int xb, yb, wb, hb;
-        int xe, ye, we, he;
-        /* Evas_Object *o; */
-        /* o = evas_object_rectangle_add(evas_object_evas_get(obj)); */
-        /* evas_object_move(o, 0, height->y1); */
-        /* evas_object_resize(o, w, height->y2 - height->y1); */
-        /* evas_object_color_set(o, 32, 32, 32, 255); */
-        evas_textblock_cursor_line_geometry_get(cursors->begin, &xb, &yb, &wb, &hb);
-        evas_textblock_cursor_line_geometry_get(cursors->end, &xe, &ye, &we, &he);
-        printf(" ** beg : %d %d %d %d\n", xb, yb, wb, hb);
-        printf(" ** end : %d %d %d %d\n", xe, ye, we, he);
-        printf(" ** hau : %d\n", ye - yb);
-        evas_object_show(o);
-        //free(height);
-    }
-}
 
 /******** Evas smart callbacks ********/
 
@@ -97,7 +41,7 @@ _smart_add(Evas_Object *obj)
     Md *sd;
     Evas_Textblock_Style *st;
 
-    INF(" * %s", __FUNCTION__);
+    ERR(" * %s", __FUNCTION__);
 
     sd = calloc(1, sizeof(Md));
     EINA_SAFETY_ON_NULL_RETURN(sd);
@@ -118,9 +62,6 @@ _smart_add(Evas_Object *obj)
     evas_object_smart_member_add(sd->tb, obj);
 
     sd->cur = evas_object_textblock_cursor_get(sd->tb);
-
-    evas_object_event_callback_add(sd->tb, EVAS_CALLBACK_RESIZE,
-                                   _etui_md_tb_resize, obj);
 }
 
 static void
@@ -128,7 +69,7 @@ _smart_del(Evas_Object *obj)
 {
     Md *sd;
 
-    INF(" * %s", __FUNCTION__);
+    ERR(" * %s", __FUNCTION__);
 
     sd = evas_object_smart_data_get(obj);
     EINA_SAFETY_ON_NULL_RETURN(sd);
@@ -136,77 +77,112 @@ _smart_del(Evas_Object *obj)
     _parent_sc.del(obj);
 
     evas_object_del(sd->tb);
+    /* FIXME: del rectangles */
 
     evas_object_smart_data_set(obj, NULL);
     memset(sd, 0, sizeof(*sd));
     free(sd);
 }
 
-static void
-_smart_move(Evas_Object *obj, Evas_Coord x, Evas_Coord y)
-{
-    Md *sd;
+/* static void */
+/* _smart_move(Evas_Object *obj, Evas_Coord x, Evas_Coord y) */
+/* { */
+/*     Md *sd; */
 
-    INF(" * %s", __FUNCTION__);
+/*     ERR(" * %s", __FUNCTION__); */
 
-    sd = evas_object_smart_data_get(obj);
-    EINA_SAFETY_ON_NULL_RETURN(sd);
+/*     sd = evas_object_smart_data_get(obj); */
+/*     EINA_SAFETY_ON_NULL_RETURN(sd); */
 
-    evas_object_move(sd->tb, x, y);
-}
+/*     evas_object_move(sd->tb, x, y); */
+/* } */
 
 static void
 _smart_resize(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
 {
-    Md *sd;
+    /* Md *sd; */
 
-    INF(" * %s", __FUNCTION__);
+    ERR(" * %s", __FUNCTION__);
 
-    sd = evas_object_smart_data_get(obj);
-    EINA_SAFETY_ON_NULL_RETURN(sd);
+    /* sd = evas_object_smart_data_get(obj); */
+    /* EINA_SAFETY_ON_NULL_RETURN(sd); */
 
-    evas_object_resize(sd->tb, w, h);
+    evas_object_smart_changed(obj);
 }
 
-static void
-_smart_show(Evas_Object *obj)
-{
-    Md *sd;
+/* static void */
+/* _smart_show(Evas_Object *obj) */
+/* { */
+/*     Md *sd; */
 
-    INF(" * %s", __FUNCTION__);
+/*     ERR(" * %s", __FUNCTION__); */
 
-    sd = evas_object_smart_data_get(obj);
-    EINA_SAFETY_ON_NULL_RETURN(sd);
+/*     sd = evas_object_smart_data_get(obj); */
+/*     EINA_SAFETY_ON_NULL_RETURN(sd); */
 
-    evas_object_show(sd->tb);
-}
+/*     evas_object_show(sd->tb); */
+/* } */
 
-static void
-_smart_hide(Evas_Object *obj)
-{
-    Md *sd;
+/* static void */
+/* _smart_hide(Evas_Object *obj) */
+/* { */
+/*     Md *sd; */
 
-    INF(" * %s", __FUNCTION__);
+/*     ERR(" * %s", __FUNCTION__); */
 
-    sd = evas_object_smart_data_get(obj);
-    EINA_SAFETY_ON_NULL_RETURN(sd);
+/*     sd = evas_object_smart_data_get(obj); */
+/*     EINA_SAFETY_ON_NULL_RETURN(sd); */
 
-    evas_object_hide(sd->tb);
-}
+/*     evas_object_hide(sd->tb); */
+/* } */
 
 static void
 _smart_calculate(Evas_Object *obj)
 {
     Md *sd;
+    Md_Cursors *cursors;
     Evas_Coord ox;
     Evas_Coord oy;
     Evas_Coord ow;
     Evas_Coord oh;
 
-    INF(" * %s", __FUNCTION__);
+    ERR(" * %s", __FUNCTION__);
 
     sd = evas_object_smart_data_get(obj);
     EINA_SAFETY_ON_NULL_RETURN(sd);
+
+    int wtb;
+    evas_object_geometry_get( obj, NULL, NULL, &wtb, NULL);
+
+    int w, h;
+    evas_object_textblock_size_formatted_get(sd->tb, &w, &h);
+    printf("resized formatted : %d %d\n", w, h);
+    fflush(stdout);
+    evas_object_size_hint_min_set(sd->tb, w, h);
+    evas_object_size_hint_min_set(obj, w, h);
+
+    Eina_List *l;
+    EINA_LIST_FOREACH(sd->cursors, l, cursors)
+    {
+        int xb, yb, wb, hb;
+        int xe, ye, we, he;
+        Evas_Object *r;
+
+        evas_textblock_cursor_line_geometry_get(cursors->begin, &xb, &yb, &wb, &hb);
+        evas_textblock_cursor_line_geometry_get(cursors->end, &xe, &ye, &we, &he);
+        printf(" ** beg : %d %d %d %d\n", xb, yb, wb, hb);
+        printf(" ** end : %d %d %d %d\n", xe, ye, we, he);
+        printf(" ** hau : %d\n", ye - yb);
+    fflush(stdout);
+
+        r = evas_object_rectangle_add(evas_object_evas_get(obj));
+        evas_object_move(r, 0, yb);
+        evas_object_resize(r, wtb, ye - yb);
+        evas_object_color_set(r, 32, 32, 32, 255);
+        evas_object_smart_member_add(r, obj);
+        evas_object_stack_below(sd->tb, r);
+        evas_object_show(r);
+    }
 
     evas_object_geometry_get(obj, &ox, &oy, &ow, &oh);
 
@@ -219,7 +195,7 @@ _smart_init(void)
 {
     static Evas_Smart_Class sc;
 
-    INF(" * %s", __FUNCTION__);
+    ERR(" * %s", __FUNCTION__);
 
     evas_object_smart_clipped_smart_set(&_parent_sc);
     sc           = _parent_sc;
@@ -227,10 +203,10 @@ _smart_init(void)
     sc.version   = EVAS_SMART_CLASS_VERSION;
     sc.add       = _smart_add;
     sc.del       = _smart_del;
-    sc.move    = _smart_move;
+    /* sc.move    = _smart_move; */
     sc.resize    = _smart_resize;
-    sc.show      = _smart_show;
-    sc.hide      = _smart_hide;
+    /* sc.show      = _smart_show; */
+    /* sc.hide      = _smart_hide; */
     sc.calculate = _smart_calculate;
     _smart = evas_smart_class_new(&sc);
 }
@@ -293,6 +269,7 @@ _md_enter_block(MD_BLOCKTYPE type, void *detail, void *data)
             if (sd->curs_current)
             {
                 sd->curs_current->begin = evas_object_textblock_cursor_new(sd->tb);
+                evas_textblock_cursor_copy(sd->cur, sd->curs_current->begin);
             }
 
             evas_textblock_cursor_format_prepend(sd->cur, "+Monospace color=#bbbbbb wrap=none");
@@ -324,6 +301,7 @@ _md_enter_block(MD_BLOCKTYPE type, void *detail, void *data)
             printf("td\n");
             break;
     }
+    fflush(stdout);
 
     return 0;
 }
@@ -372,6 +350,7 @@ _md_leave_block(MD_BLOCKTYPE type, void *detail, void *data)
             if (sd->curs_current)
             {
                 sd->curs_current->end = evas_object_textblock_cursor_new(sd->tb);
+                evas_textblock_cursor_copy(sd->cur, sd->curs_current->end);
                 sd->cursors  = eina_list_append(sd->cursors, sd->curs_current);
             }
 
@@ -406,6 +385,7 @@ _md_leave_block(MD_BLOCKTYPE type, void *detail, void *data)
             printf("td\n");
             break;
     }
+    fflush(stdout);
 
     return 0;
 }
@@ -454,6 +434,7 @@ _md_enter_span(MD_SPANTYPE type, void *detail, void *data)
             printf("underline\n");
             break;
     }
+    fflush(stdout);
 
     return 0;
 }
@@ -501,6 +482,7 @@ _md_leave_span(MD_SPANTYPE type, void *detail, void *data)
             printf("underline\n");
             break;
     }
+    fflush(stdout);
 
     return 0;
 }
@@ -563,6 +545,7 @@ _md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE size, void *data)
             printf("text (%d) latexmath: '%s'\n", type, str);
             break;
     }
+    fflush(stdout);
 
     return 0;
 }
