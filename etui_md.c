@@ -5,6 +5,53 @@
 
 #include "etui_md.h"
 
+/*
+ * TODO
+ *
+ * Blocks
+ *
+ * [X] doc
+ * [ ] quote
+ * [ ] ul
+ * [ ] ol
+ * [ ] li
+ * [ ] hr
+ * [X] h
+ * [X] code
+ * [ ] html
+ * [X] p
+ * [ ] table
+ * [ ] thead
+ * [ ] tbody
+ * [ ] tr
+ * [ ] th
+ * [ ] td
+ *
+ * Spans
+ *
+ * [X] em
+ * [X] strong
+ * [ ] a
+ * [ ] img
+ * [X] code
+ * [ ] del
+ * [ ] latexmath(display)
+ * [ ] wikilink
+ * [X] u
+ *
+ * Texts
+ *
+ * [X] normal
+ * [ ] nullchar
+ * [X] br
+ * [X] softbr
+ * [ ] entity
+ * [X] code
+ * [ ] html
+ * [ ] latexmath
+ *
+ * /
+
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
@@ -362,6 +409,7 @@ _md_enter_span(MD_SPANTYPE type, void *detail, void *data)
             break;
         case MD_SPAN_U:
             printf("underline\n");
+            evas_textblock_cursor_format_prepend(sd->cur, "+underline=single underline_color=#a0a0a0");
             break;
     }
     fflush(stdout);
@@ -408,6 +456,7 @@ _md_leave_span(MD_SPANTYPE type, void *detail, void *data)
             break;
         case MD_SPAN_U:
             printf("underline\n");
+            evas_textblock_cursor_format_prepend(sd->cur, "-");
             break;
     }
     fflush(stdout);
@@ -519,7 +568,7 @@ void etui_md_file_set(Evas_Object *obj, const char *filename)
 
    /* parse markdown file */
    memset(&parser, 0, sizeof(parser));
-   parser.flags = MD_DIALECT_COMMONMARK;
+   parser.flags = MD_DIALECT_COMMONMARK | MD_FLAG_UNDERLINE;
    parser.enter_block = _md_enter_block;
    parser.leave_block = _md_leave_block;
    parser.enter_span = _md_enter_span;
