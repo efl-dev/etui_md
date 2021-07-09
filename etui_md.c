@@ -50,7 +50,7 @@
  * [ ] html
  * [ ] latexmath
  *
- * /
+ */
 
 /*============================================================================*
  *                                  Local                                     *
@@ -71,6 +71,7 @@ struct Md_
 {
     Evas_Object_Smart_Clipped_Data __clipped_data;
     Evas_Object *tb;
+    Evas_Textblock_Style *st;
     Evas_Textblock_Cursor *cur;
     Md_Cursors *curs_current;
     Eina_List *cursors;
@@ -85,9 +86,7 @@ static Evas_Smart_Class _parent_sc = EVAS_SMART_CLASS_INIT_NULL;
 static void
 _smart_add(Evas_Object *obj)
 {
-   char buf[128];
    Md *sd;
-   Evas_Textblock_Style *st;
 
    sd = calloc(1, sizeof(Md));
    EINA_SAFETY_ON_NULL_RETURN(sd);
@@ -96,16 +95,16 @@ _smart_add(Evas_Object *obj)
 
    _parent_sc.add(obj);
 
-   st = evas_textblock_style_new();
+   sd->tb = evas_object_textblock_add(evas_object_evas_get(obj));
+   evas_object_scale_set(sd->tb, elm_config_scale_get());
+
+   sd->st = evas_textblock_style_new();
+   /* textblock API guards against NULL style, so no need to check twice */
+   char buf[128];
    snprintf(buf, sizeof(buf),
             "DEFAULT='font=Sans font_size=10 color=#a0a0a0'");
-   evas_textblock_style_set(st, buf);
-
-   sd->tb = evas_object_textblock_add(evas_object_evas_get(obj));
-   evas_object_textblock_style_set(sd->tb, st);
-   evas_object_scale_set(sd->tb, elm_config_scale_get());
-   // FIXME: free st - it still has a reference and will be alive, or store it
-   // in the smart obj and free on smart del
+   evas_textblock_style_set(sd->st, buf);
+   evas_object_textblock_style_set(sd->tb, sd->st);
 
    evas_object_smart_member_add(sd->tb, obj);
    evas_object_show(sd->tb);
@@ -116,12 +115,21 @@ _smart_add(Evas_Object *obj)
 static void
 _smart_del(Evas_Object *obj)
 {
-   Md *sd = evas_object_smart_data_get(obj);
+   Md *sd;
+   Md_Cursors *cursor;
+   Eina_List *l;
 
+   sd = evas_object_smart_data_get(obj);
    EINA_SAFETY_ON_NULL_RETURN(sd);
 
+   EINA_LIST_FOREACH(sd->cursors, l, cursor)
+   {
+       evas_object_del(cursor->backing);
+       evas_textblock_cursor_free(cursor->begin);
+       evas_textblock_cursor_free(cursor->end);
+   }
+   evas_textblock_style_free(sd->st);
    evas_object_del(sd->tb);
-   /* FIXME: del cursors (cursor + backing obj) */
 
    _parent_sc.del(obj);
    evas_object_smart_data_set(obj, NULL);
@@ -131,7 +139,7 @@ _smart_del(Evas_Object *obj)
 }
 
 static void
-_smart_resize(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
+_smart_resize(Evas_Object *obj, Evas_Coord w EINA_UNUSED, Evas_Coord h EINA_UNUSED)
 {
    evas_object_smart_changed(obj);
 }
@@ -387,11 +395,25 @@ _md_enter_span(MD_SPANTYPE type, void *detail, void *data)
             evas_textblock_cursor_format_prepend(sd->cur, "+font_weight=bold");
             break;
         case MD_SPAN_A:
-            printf("a\n");
+        {
+            MD_SPAN_A_DETAIL *d;
+
+            d = (MD_SPAN_A_DETAIL *)detail;
+            printf("a : %s (%s)\n", d->href.text, d->title.text);
             break;
+        }
         case MD_SPAN_IMG:
-            printf("img\n");
+        {
+            char *buf;
+            MD_SPAN_IMG_DETAIL *d;
+
+            d = (MD_SPAN_IMG_DETAIL *)detail;
+            buf = alloca(d->src.size + 1);
+            memcpy(buf, d->src.text, d->src.size);
+            buf[d->src.size] = '\0';
+            printf("img : %s (%s)\n", buf, d->title.text);
             break;
+        }
         case MD_SPAN_CODE:
             printf("code\n");
             /* fg */
