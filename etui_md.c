@@ -34,7 +34,7 @@
  * [ ] a
  * [ ] img
  * [X] code
- * [ ] del
+ * [X] del
  * [ ] latexmath(display)
  * [ ] wikilink
  * [X] u
