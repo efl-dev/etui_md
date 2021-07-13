@@ -44,3 +44,4 @@ underline _test underline_ fin
 italique *test italique* fin
 gras **test gras *gras italique*** fin
 ![image alt text](http://example.org/image.png)
+~~strike~~

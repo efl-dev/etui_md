@@ -421,6 +421,7 @@ _md_enter_span(MD_SPANTYPE type, void *detail, void *data)
             break;
         case MD_SPAN_DEL:
             printf("del\n");
+            evas_textblock_cursor_format_prepend(sd->cur, "+strikethrough=on strikethrough_color=#a0a0a0");
             break;
         case MD_SPAN_LATEXMATH:
         case MD_SPAN_LATEXMATH_DISPLAY:
@@ -468,6 +469,7 @@ _md_leave_span(MD_SPANTYPE type, void *detail, void *data)
             break;
         case MD_SPAN_DEL:
             printf("del\n");
+            evas_textblock_cursor_format_prepend(sd->cur, "-");
             break;
         case MD_SPAN_LATEXMATH:
         case MD_SPAN_LATEXMATH_DISPLAY:
@@ -590,7 +592,10 @@ void etui_md_file_set(Evas_Object *obj, const char *filename)
 
    /* parse markdown file */
    memset(&parser, 0, sizeof(parser));
-   parser.flags = MD_DIALECT_COMMONMARK | MD_FLAG_UNDERLINE;
+   parser.flags =
+       MD_DIALECT_COMMONMARK |
+       MD_FLAG_UNDERLINE |
+       MD_FLAG_STRIKETHROUGH;
    parser.enter_block = _md_enter_block;
    parser.leave_block = _md_leave_block;
    parser.enter_span = _md_enter_span;
