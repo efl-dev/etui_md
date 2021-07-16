@@ -12,9 +12,9 @@
  *
  * [X] doc
  * [ ] quote
- * [ ] ul
- * [ ] ol
- * [ ] li
+ * [X] ul
+ * [X] ol
+ * [X] li
  * [ ] hr
  * [X] h
  * [X] code
@@ -56,7 +56,17 @@
  *                                  Local                                     *
  *============================================================================*/
 
+typedef struct MD_List_ MD_List;
 typedef struct MD_Cursors_ Md_Cursors;
+
+struct MD_List_
+{
+    int is_tight;
+    unsigned int start; /* for OL only*/
+    unsigned int current_idx;
+    MD_CHAR mark;
+    char type; /* 0: OL, 1: UL */
+};
 
 struct MD_Cursors_
 {
@@ -75,6 +85,15 @@ struct Md_
     Evas_Textblock_Cursor *cur;
     Md_Cursors *curs_current;
     Eina_List *cursors;
+    Eina_List *lists;
+};
+
+static char *_md_list_item[4] =
+{
+    "●",
+    "○",
+    "■",
+    "□"
 };
 
 static Evas_Smart *_smart = NULL;
@@ -221,14 +240,89 @@ _md_enter_block(MD_BLOCKTYPE type, void *detail, void *data)
             printf("blockquote\n");
             break;
         case MD_BLOCK_UL:
-            printf("ul\n");
+        {
+            MD_List *l;
+            MD_BLOCK_UL_DETAIL *d;
+
+            printf("ul (%p)\n", sd->lists);
+            fflush(stdout);
+
+            if (!sd->lists)
+                evas_textblock_cursor_format_prepend(sd->cur, "\n");
+
+            d = (MD_BLOCK_UL_DETAIL *)detail;
+            l = (MD_List *)calloc(1, sizeof(MD_List));
+            if (!l)
+                return -10;
+
+            l->type = 1;
+            l->is_tight = d->is_tight;
+            l->mark = d->mark;
+
+            sd->lists = eina_list_append(sd->lists, l);
             break;
+        }
         case MD_BLOCK_OL:
-            printf("ol\n");
+        {
+            MD_List *l;
+            MD_BLOCK_OL_DETAIL *d;
+
+            if (!sd->lists)
+                evas_textblock_cursor_format_prepend(sd->cur, "\n");
+
+            d = (MD_BLOCK_OL_DETAIL *)detail;
+            l = (MD_List *)calloc(1, sizeof(MD_List));
+            if (!l)
+                return -10;
+
+            l->type = 0;
+            l->is_tight = d->is_tight;
+            l->mark = d->mark_delimiter;
+            l->start = d->start;
+            l->current_idx = d->start;
+
+            printf("ol : start : %d\n", l->start);
+            fflush(stdout);
+
+            sd->lists = eina_list_append(sd->lists, l);
             break;
+        }
         case MD_BLOCK_LI:
+        {
+            MD_List *l;
+            unsigned int i;
+            unsigned int count;
+
+            l = eina_list_last_data_get(sd->lists);
+            if (!l)
+                return -10;
+
+            count = eina_list_count(sd->lists);
+            if (count == 0)
+                return -10;
+
+            for (i = 0; i < count; i++)
+                evas_textblock_cursor_format_prepend(sd->cur, "\t");
+            if (l->type == 1)
+            {
+                if (count >= 4)
+                    evas_textblock_cursor_text_prepend(sd->cur, _md_list_item[3]);
+                else
+                    evas_textblock_cursor_text_prepend(sd->cur, _md_list_item[count - 1]);
+            }
+            else
+            {
+                char buf[256];
+
+                snprintf(buf, sizeof(buf), "%d%c", l->current_idx, l->mark);
+                evas_textblock_cursor_text_prepend(sd->cur, buf);
+                l->current_idx++;
+            }
+            evas_textblock_cursor_text_prepend(sd->cur, " ");
             printf("li\n");
+            fflush(stdout);
             break;
+        }
         case MD_BLOCK_HR:
             printf("hr\n");
             break;
@@ -268,7 +362,8 @@ _md_enter_block(MD_BLOCKTYPE type, void *detail, void *data)
             printf("raw html\n");
             break;
         case MD_BLOCK_P:
-            evas_textblock_cursor_format_prepend(sd->cur, "\n");
+            if (!sd->lists)
+                evas_textblock_cursor_format_prepend(sd->cur, "\n");
             printf("p\n");
             break;
         case MD_BLOCK_TABLE:
@@ -305,21 +400,66 @@ _md_leave_block(MD_BLOCKTYPE type, void *detail, void *data)
     switch (type)
     {
         case MD_BLOCK_DOC:
-            //evas_textblock_cursor_format_prepend(sd->cur, "-");
             printf("body\n");
             break;
         case MD_BLOCK_QUOTE:
             printf("blockquote\n");
             break;
         case MD_BLOCK_UL:
+        {
+            MD_List *l;
+
+            l = eina_list_last_data_get(sd->lists);
+            if (!l)
+                return -10;
+
+            sd->lists = eina_list_remove(sd->lists, l);
+            free(l);
+            if (eina_list_count(sd->lists) == 0)
+            {
+                eina_list_free(sd->lists);
+                sd->lists = NULL;
+            }
+
             printf("ul\n");
+            fflush(stdout);
             break;
+        }
         case MD_BLOCK_OL:
+        {
+            MD_List *l;
+
+            l = eina_list_last_data_get(sd->lists);
+            if (!l)
+                return -10;
+
+            sd->lists = eina_list_remove(sd->lists, l);
+            free(l);
+            if (eina_list_count(sd->lists) == 0)
+            {
+                eina_list_free(sd->lists);
+                sd->lists = NULL;
+            }
+
             printf("ol\n");
+            fflush(stdout);
             break;
+        }
         case MD_BLOCK_LI:
-            printf("li\n");
+        {
+            MD_List *l;
+
+            l = eina_list_last_data_get(sd->lists);
+            if (!l)
+                return -10;
+
+            /* if (l->is_tight) */
+            /*     evas_textblock_cursor_format_prepend(sd->cur, "\n"); */
+
+            printf("li %d\n", l->is_tight);
+            fflush(stdout);
             break;
+        }
         case MD_BLOCK_HR:
             printf("hr\n");
             break;
@@ -350,9 +490,22 @@ _md_leave_block(MD_BLOCKTYPE type, void *detail, void *data)
             printf("raw html\n");
             break;
         case MD_BLOCK_P:
+        {
             evas_textblock_cursor_format_prepend(sd->cur, "\n");
+            if (sd->lists)
+            {
+                MD_List *l;
+
+                l = eina_list_last_data_get(sd->lists);
+                if (!l)
+                    return -10;
+
+                if (!l->is_tight)
+                    evas_textblock_cursor_format_prepend(sd->cur, "\n");
+            }
             printf("p\n");
             break;
+        }
         case MD_BLOCK_TABLE:
             printf("table\n");
             break;
@@ -503,12 +656,30 @@ _md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE size, void *data)
     switch (type)
     {
         case MD_TEXT_NORMAL:
-            printf("text (%d) normal : '%s'\n", type, str);
+        {
+            printf("text (%d) normal : '%s' (list: %p)\n", type, str, sd->lists);
+            fflush(stdout);
             tmp = alloca(size + 1);
             memcpy(tmp, text, size);
             tmp[size] = '\0';
             evas_textblock_cursor_text_prepend(sd->cur, tmp);
+
+            if (sd->lists)
+            {
+                MD_List *l;
+
+                l = eina_list_last_data_get(sd->lists);
+                if (!l)
+                    return -10;
+
+                printf("text normal is_tight : %d\n", l->is_tight);
+                fflush(stdout);
+                if (l->is_tight)
+                    evas_textblock_cursor_format_prepend(sd->cur, "\n");
+            }
+
             break;
+        }
         case MD_TEXT_NULLCHAR:
             printf("text (%d) null char: '%s'\n", type, str);
             break;
