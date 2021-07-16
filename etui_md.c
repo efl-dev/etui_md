@@ -96,6 +96,12 @@ static char *_md_list_item[4] =
     "□"
 };
 
+static char *_md_list_task[2] =
+{
+    "☐",
+    "☑"
+};
+
 static Evas_Smart *_smart = NULL;
 static Evas_Smart_Class _parent_sc = EVAS_SMART_CLASS_INIT_NULL;
 
@@ -305,10 +311,25 @@ _md_enter_block(MD_BLOCKTYPE type, void *detail, void *data)
                 evas_textblock_cursor_format_prepend(sd->cur, "\t");
             if (l->type == 1)
             {
-                if (count >= 4)
-                    evas_textblock_cursor_text_prepend(sd->cur, _md_list_item[3]);
+                MD_BLOCK_LI_DETAIL *d;
+
+                d = (MD_BLOCK_LI_DETAIL *)detail;
+
+                if (d->is_task)
+                {
+                    if (d->task_mark == ' ')
+                        evas_textblock_cursor_text_prepend(sd->cur, _md_list_task[0]);
+                    else
+                        evas_textblock_cursor_text_prepend(sd->cur, _md_list_task[1]);
+                    printf(" **%d**\n", d->task_mark_offset);
+                }
                 else
-                    evas_textblock_cursor_text_prepend(sd->cur, _md_list_item[count - 1]);
+                {
+                    if (count >= 4)
+                        evas_textblock_cursor_text_prepend(sd->cur, _md_list_item[3]);
+                    else
+                        evas_textblock_cursor_text_prepend(sd->cur, _md_list_item[count - 1]);
+                }
             }
             else
             {
@@ -766,7 +787,8 @@ void etui_md_file_set(Evas_Object *obj, const char *filename)
    parser.flags =
        MD_DIALECT_COMMONMARK |
        MD_FLAG_UNDERLINE |
-       MD_FLAG_STRIKETHROUGH;
+       MD_FLAG_STRIKETHROUGH |
+       MD_FLAG_TASKLISTS;
    parser.enter_block = _md_enter_block;
    parser.leave_block = _md_leave_block;
    parser.enter_span = _md_enter_span;
